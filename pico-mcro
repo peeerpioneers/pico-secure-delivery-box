@@ -1,0 +1,86 @@
+from machine import I2C, Pin
+import time
+import matplotlib.pyplot as plt  # If you want to plot the data
+
+# BME280 default address.
+BME280_I2CADDR = 0x76
+
+# Operating Modes
+BME280_OSAMPLE_1 = 1
+BME280_OSAMPLE_2 = 2
+BME280_OSAMPLE_4 = 3
+BME280_OSAMPLE_8 = 4
+BME280_OSAMPLE_16 = 5
+
+# BME280 Registers...
+# (your existing register and class definitions here)
+
+# Functions to initialize I2C and BME280
+def init_i2c():
+    sda = Pin(21)
+    scl = Pin(22) 
+    i2c = I2C(scl=scl, sda=sda, freq=100000)
+    return i2c
+
+def initialize_bme280(i2c):
+    bme280 = BME280(i2c=i2c)
+    return bme280
+
+# Initialize I2C and BME280
+i2c = init_i2c()
+bme280 = initialize_bme280(i2c)
+
+def read_bme280_data():
+    temperature = bme280.temperature
+    pressure = bme280.pressure
+    humidity = bme280.humidity
+
+    print("Temperature: ", temperature)
+    print("Pressure: ", pressure)
+    print("Humidity: ", humidity)
+
+    return temperature, pressure, humidity
+
+# If you want to gather and plot data over time.
+def plot_data():
+    temperatures = []
+    pressures = []
+    humidities = []
+    times = []
+
+    start_time = time.time()
+
+    try:
+        while True:
+            current_time = time.time() - start_time
+            temperature, pressure, humidity = read_bme280_data()
+            
+            times.append(current_time)
+            temperatures.append(float(temperature.replace("C", "")))
+            pressures.append(float(pressure.replace("hPa", "")))
+            humidities.append(float(humidity.replace("%", "")))
+
+            plt.clf()
+            plt.subplot(311)
+            plt.title('BME280 Sensor Data')
+            plt.plot(times, temperatures, label='Temperature (C)')
+            plt.legend(loc='upper left')
+
+            plt.subplot(312)
+            plt.plot(times, pressures, label='Pressure (hPa)')
+            plt.legend(loc='upper left')
+
+            plt.subplot(313)
+            plt.plot(times, humidities, label='Humidity (%)')
+            plt.legend(loc='upper left')
+
+            plt.pause(1)
+
+    except KeyboardInterrupt:
+        plt.show()
+
+# To just read data once:
+read_bme280_data()
+
+# Uncomment to plot data over time:
+# plot_data()
