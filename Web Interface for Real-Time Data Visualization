@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pico Secure Box Version 1.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Pico Secure Box</h1>
+  <h2>Secure Box Controls</h2>
+  <form action="./ARMED">
+    <input type="submit" value="ARMED" />
+  </form>
+  <br>
+  <form action="./DISARMED">
+    <input type="submit" value="DISARMED MODE" />
+  </form>
+  <br>
+  <form action="./DROPOFFMODE">
+    <input type="submit" value="DROPOFFMODE" />
+  </form>
+  <br>
+  <p style="color:DarkRed;">Secure Box Status: {state}</p>
+  <h2>Fetch Weather Statistics</h2>
+  <form action="./getweathervalue">
+    <input type="submit" value="Fetch Weather Stats" />
+  </form>
+  <p>Weather Statisics: {weather_value}</p>
+  <h2>Live Weather Data</h2>
+  <canvas id="weatherChart" width="400" height="200"></canvas>
+  <script>
+    const ctx = document.getElementById('weatherChart').getContext('2d');
+    const weatherChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Temperature (C)',
+          data: [],
+          borderColor: 'red',
+          borderWidth: 1,
+          fill: false
+        },{
+          label: 'Humidity (%)',
+          data: [],
+          borderColor: 'blue',
+          borderWidth: 1,
+          fill: false
+        },{
+          label: 'Pressure (hPa)',
+          data: [],
+          borderColor: 'green',
+          borderWidth: 1,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom'
+          }
+        }
+      }
+    });
+
+    async function fetchData() {
+      const response = await fetch('/getweathervalue');
+      const data = await response.json();
+
+      weatherChart.data.labels.push(data.timestamp);
+      weatherChart.data.datasets[0].data.push(data.temperature);
+      weatherChart.data.datasets[1].data.push(data.humidity);
+      weatherChart.data.datasets[2].data.push(data.pressure);
+
+      weatherChart.update();
+    }
+
+    setInterval(fetchData, 3000);
+  </script>
+</body>
+</html>
