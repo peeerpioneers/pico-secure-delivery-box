@@ -1,0 +1,39 @@
+async def handle_client(reader, writer):
+    global state
+
+    request_line = await reader.readline()
+
+    while await reader.readline() != b"\r\n":
+        pass
+
+    request = str(request_line, 'utf-8').split()[1]
+
+    if request == '/ARMED?':
+        state = 'ARMED'
+    elif request == '/DISARMED?':
+        state = 'DISARMED'
+    elif request == '/DROPOFFMODE?':
+        state = 'DROPOFFMODE'
+        dropboxvalue = 0
+        relay_lock.value(1)
+    elif request == '/getweathervalue?':
+        global weather_value
+        bme = BME280.BME280(i2c=i2c)
+        tempC = bme.temperature
+        hum = bme.humidity
+        pres = bme.pressure
+        tempF = (bme.read_temperature()/100) * (9/5) + 32
+        tempF = str(round(tempF, 2)) + 'F'
+        weather_value = ({"timestamp": int(time.time()), "temperature": tempC, "humidity": hum, "pressure": pres})
+        weather_json = ujson.dumps(weather_value)
+        writer.write('HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n')
+        writer.write(weather_json)
+        await writer.drain()
+        await writer.wait_closed()
+        return
+
+    response = webpage(weather_value, state)
+    writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
+    writer.write(response)
+    await writer.drain()
+    await writer.wait_closed()
