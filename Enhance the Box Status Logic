@@ -1,0 +1,17 @@
+async def Boxstatus():
+    global state
+    global vibrationcount
+    global startupcount
+    if state == 'STARTUP':
+        led.value(1)
+        relay_siren.value(1)
+        await asyncio.sleep(1)
+        led.value(0)
+        relay_siren.value(0)
+        startupcount += 1
+        if startupcount == 4:
+            state = "DISARMED"
+    elif state == 'ARMED':
+        relay_lock.value(0)
+        if box_sensor.value() or box_sensor1.value() == 1:
+            relay_siren.value(1)
